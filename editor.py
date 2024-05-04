@@ -30,6 +30,7 @@ class Editor:
         self.tile_variant = 0
         self.scroll = [0, 0]
 
+        # assets and tilemap
         self.tile_assets = load_tile_assets()
         self.tile_list = list(self.tile_assets)
         self.tilemap = Tilemap(self.tile_assets)
@@ -38,18 +39,6 @@ class Editor:
         except FileNotFoundError:
             pass
 
-    def resize(self, size):
-        # fixed height, variable width
-        self.display_scale = INITIAL_DISPLAY_SIZE[1] / size[1]
-        self.display = pygame.Surface((size[0] * self.display_scale, INITIAL_DISPLAY_SIZE[1]))
-
-    def update_tile(self, increment=1, variant=False):
-        if variant:
-            self.tile_variant = (self.tile_variant + increment) % len(self.tile_assets[self.tile_list[self.tile_type]])
-        else:
-            self.tile_type = (self.tile_type + increment) % len(self.tile_list)
-            self.tile_variant = 0
-
     def run(self):
         running = True
         while running:
@@ -57,14 +46,14 @@ class Editor:
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
             self.scroll[1] += (self.movement[3] - self.movement[2]) * 8
             render_offset = (int(self.scroll[0]), int(self.scroll[1]))
+
             # relative mouse position
             mpos = pygame.mouse.get_pos()
             mpos = (mpos[0] * self.display_scale, mpos[1] * self.display_scale)
 
-            # placing tiles ongrid (offgrid in events once per click)
-            if self.click[0] and self.ongrid:
+            # tile placement
+            if self.click[0] and self.ongrid:  # (offgrid in events loop once per click)
                 self.tilemap.add((mpos[0] + render_offset[0], mpos[1] + render_offset[1]), self.tile_list[self.tile_type], self.tile_variant, self.ongrid)
-            # removing tiles
             if self.click[1]:
                 self.tilemap.remove((mpos[0] + render_offset[0], mpos[1] + render_offset[1]), render_offset, self.ongrid)
 
@@ -136,6 +125,18 @@ class Editor:
                         self.click[1] = False
 
             self.clock.tick(FPS)
+
+    def resize(self, size):
+        # fixed height, variable width
+        self.display_scale = INITIAL_DISPLAY_SIZE[1] / size[1]
+        self.display = pygame.Surface((size[0] * self.display_scale, INITIAL_DISPLAY_SIZE[1]))
+
+    def update_tile(self, increment=1, variant=False):
+        if variant:
+            self.tile_variant = (self.tile_variant + increment) % len(self.tile_assets[self.tile_list[self.tile_type]])
+        else:
+            self.tile_type = (self.tile_type + increment) % len(self.tile_list)
+            self.tile_variant = 0
 
     def render_current_tile(self, mpos):
         tile_img = self.tile_assets[self.tile_list[self.tile_type]][self.tile_variant]
