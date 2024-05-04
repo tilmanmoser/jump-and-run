@@ -1,0 +1,189 @@
+import pygame
+from scripts.tilemap import Tilemap
+from scripts.utils import Animation
+
+
+class Entity:
+    def __init__(self, animations, e_type, pos, size, animation_offset=(0, 0)):
+        print(animation_offset)
+        self.animations = animations
+        self.type = e_type
+        self.pos = list(pos)
+        self.size = list(size)
+        self.animation_offset = list(animation_offset)
+        self.flip = False
+        self.action = ""
+        self.set_action("idle")
+
+    def rect(self):
+        return pygame.Rect((self.pos[0], self.pos[1], self.size[0], self.size[1]))
+
+    def set_action(self, action):
+        if self.action != action:
+            self.action = action
+            self.animation = self.animations[self.type + "/" + self.action].copy()
+
+    def update(self):
+        self.animation.update()
+
+    def render(self, surface: pygame.Surface, offset=(0, 0)):
+        surface.blit(
+            pygame.transform.flip(self.animation.image(), self.flip, False),
+            (
+                self.pos[0] - offset[0] + self.animation_offset[0],
+                self.pos[1] - offset[1] + self.animation_offset[1],
+            ),
+        )
+
+
+class PhysicsEntity(Entity):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.collisions = {"up": False, "down": False, "right": False, "left": False}
+        self.velocity = [0, 0]
+        self.last_movement = [0, 0]
+
+    def update(self, tilemap: Tilemap, movement=(0, 0)):
+        frame_movement = (
+            movement[0] + self.velocity[0],
+            movement[1] + self.velocity[1],
+        )
+
+        # self.size[0/1] _MUST_ be <= tilemap.tile_size for collision detection to work right
+        self.collisions = {"up": False, "down": False, "right": False, "left": False}
+
+        # move on y-axis
+        self.pos[1] += frame_movement[1]
+        entity_rect = self.rect()
+        for rect in tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if frame_movement[1] > 0:
+                    entity_rect.bottom = rect.top
+                    self.collisions["down"] = True
+                if frame_movement[1] < 0:
+                    entity_rect.top = rect.bottom
+                    self.collisions["up"] = True
+                self.pos[1] = entity_rect.y
+        if self.collisions["up"] or self.collisions["down"]:
+            self.velocity[1] = 0
+        else:
+            self.velocity[1] = min(5, self.velocity[1] + 0.1)
+
+        # move on x-axis
+        self.pos[0] += frame_movement[0]
+        entity_rect = self.rect()
+        for rect in tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if frame_movement[0] > 0:
+                    entity_rect.right = rect.left
+                    self.collisions["right"] = True
+                if frame_movement[0] < 0:
+                    entity_rect.left = rect.right
+                    self.collisions["left"] = True
+                self.pos[0] = entity_rect.x
+
+        # flip animation into movement direction
+        if movement[0] > 0:
+            self.flip = False
+        if movement[0] < 0:
+            self.flip = True
+
+        self.last_movement = movement
+
+        super().update()
+
+
+class Player(PhysicsEntity):
+    def __init__(self, animations, pos):
+        super().__init__(animations, "player", pos, size=(16, 16), animation_offset=(-8, -16))
+        self.speed = 2
+        self.air_time = 0
+        self.jumps = 1
+        self.wall_slide = False
+        self.dead = False
+
+    def reset_at(self, pos=(0, 0)):
+        self.pos = list(pos)
+        self.air_time = 0
+        self.jumps = 1
+        self.wall_slide = False
+        self.dead = False
+        self.flip = False
+        self.velocity = [0, 0]
+
+    def update(self, tilemap: Tilemap, movement=(0, 0)):
+        self.air_time += 1
+        if self.collisions["down"]:
+            self.air_time = 0
+            self.jumps = 1
+
+        if self.air_time > 180:
+            self.dead = True
+
+        self.wall_slide = False
+        if (self.collisions["right"] or self.collisions["left"]) and self.air_time > 4:
+            self.wall_slide = True
+            self.air_time = 5
+            self.velocity[1] = min(1, self.velocity[1])
+            if self.collisions["right"]:
+                self.flip = False
+            else:
+                self.flip = True
+            self.set_action("fall")
+
+        if self.wall_slide:
+            self.set_action("wall-slide")
+        else:
+            if self.air_time > 4:
+                if self.velocity[1] < 0:
+                    if self.velocity[0] != 0:
+                        self.set_action("wall-jump")
+                    else:
+                        self.set_action("jump")
+                else:
+                    self.set_action("fall")
+                    self.jumps = 0
+            elif movement[0] != 0:
+                self.set_action("run")
+            else:
+                self.set_action("idle")
+
+        if self.velocity[0] > 0:
+            self.velocity[0] = max(0, self.velocity[0] - 0.1)
+        else:
+            self.velocity[0] = min(0, self.velocity[0] + 0.1)
+
+        super().update(tilemap, movement=(movement[0] * self.speed, movement[1]))
+
+    def jump(self):
+        if self.wall_slide:
+            if self.flip and self.last_movement[0] < 0:
+                self.velocity[0] = 5
+                self.velocity[1] = -3
+                self.air_time = 5
+                self.jumps = max(0, self.jumps - 1)
+                return True
+
+            elif not self.flip and self.last_movement[0] > 0:
+                self.velocity[0] = -5
+                self.velocity[1] = -3
+                self.air_time = 5
+                self.jumps = max(0, self.jumps - 1)
+                self.flip = not self.flip
+                return True
+
+        elif self.jumps:
+            self.velocity[1] = -4
+            self.jumps -= 1
+            self.air_time = 5
+            return True
+
+
+class Enemy(Entity):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class Pig(Enemy, PhysicsEntity):
+    def __init__(self) -> None:
+        super().__init__()

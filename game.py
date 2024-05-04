@@ -1,6 +1,7 @@
 import pygame
 import pygame.gfxdraw
 
+from scripts.entities import Player
 from scripts.tilemap import Tilemap
 from scripts.utils import get_level_list, load_animated_assets, load_tile_assets
 
@@ -32,17 +33,35 @@ class Game:
         self.tilemap = Tilemap(self.tile_assets)
         self.tilemap.load(self.levels[self.level])
 
+        # entities
+        self.player = Player(self.animated_assets, pos=(300, 60))
+
+        self.reset_level()
+
+    def reset_level(self):
+        self.player.reset_at((300, 60))
+
     def run(self):
         running = True
         while running:
-            # camera position
+            if self.player.dead:
+                self.reset_level()
+
+            # camera position centered on player
+            self.scroll[0] += self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]
+            self.scroll[1] += self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]
             render_offset = (int(self.scroll[0]), int(self.scroll[1]))
 
-            # rendering
+            # render display & update objects
             self.display.fill((0, 0, 0, 0))
             self.render_background()
             self.tilemap.render(self.display, render_offset)
 
+            if not self.player.dead:
+                self.player.update(movement=(self.movement[1] - self.movement[0], 0), tilemap=self.tilemap)
+                self.player.render(self.display, render_offset)
+
+            # render display to screen
             self.screen.fill((0, 0, 0, 0))
             self.screen.blit(
                 pygame.transform.scale(self.display, (self.display.get_width() / self.display_scale, self.display.get_height() / self.display_scale)), (0, 0)
@@ -62,6 +81,8 @@ class Game:
                         self.movement[0] = True
                     if event.key in (pygame.K_RIGHT, pygame.K_d):
                         self.movement[1] = True
+                    if event.key in (pygame.K_UP, pygame.K_w, pygame.K_SPACE):
+                        self.player.jump()
                 if event.type == pygame.KEYUP:
                     if event.key in (pygame.K_LEFT, pygame.K_a):
                         self.movement[0] = False

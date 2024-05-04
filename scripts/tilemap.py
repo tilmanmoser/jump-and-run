@@ -38,6 +38,18 @@ AUTOTILE_MAP = {
     tuple(): 15,
 }
 
+NEIGHBOR_OFFSETS = [
+    (-1, 0),
+    (-1, -1),
+    (0, -1),
+    (-1, -1),
+    (1, 0),
+    (0, 0),
+    (-1, 1),
+    (0, 1),
+    (1, 1),
+]
+
 
 class Tilemap:
     def __init__(self, assets={}):
@@ -100,6 +112,35 @@ class Tilemap:
                 neighbors = tuple(sorted(neighbors))
                 if neighbors in AUTOTILE_MAP:
                     tile["variant"] = AUTOTILE_MAP[neighbors]
+
+    def tiles_around(self, pos):
+        tiles = []
+        tile_loc = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
+        for offset in NEIGHBOR_OFFSETS:
+            check_loc = str(tile_loc[0] + offset[0]) + ";" + str(tile_loc[1] + offset[1])
+            if check_loc in self.tiles:
+                tiles.append(self.tiles[check_loc])
+        return tiles
+
+    def physics_rects_around(self, pos):
+        rects = []
+        for tile in self.tiles_around(pos):
+            if tile["type"].startswith("tiles/"):
+                rects.append(
+                    pygame.Rect(
+                        tile["pos"][0] * self.tile_size,
+                        tile["pos"][1] * self.tile_size,
+                        self.tile_size,
+                        self.tile_size,
+                    )
+                )
+        return rects
+
+    def solid_check(self, pos):
+        tile_loc = str(int(pos[0] // self.tile_size)) + ";" + str(int(pos[1] // self.tile_size))
+        if tile_loc in self.tilemap:
+            if self.tiles[tile_loc]["type"].startswith("tiles/"):
+                return self.tiles[tile_loc]
 
     def render(self, surface: pygame.Surface, offset=(0, 0)):
         for tile in self.offgrid:
