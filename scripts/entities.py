@@ -1,12 +1,13 @@
+import math
+import random
 import pygame
+from scripts.spark import Spark
 from scripts.tilemap import Tilemap
-from scripts.utils import Animation
 
 
 class Entity:
-    def __init__(self, animations, e_type, pos, size, animation_offset=(0, 0)):
-        print(animation_offset)
-        self.animations = animations
+    def __init__(self, game, e_type, pos, size, animation_offset=(0, 0)):
+        self.game = game
         self.type = e_type
         self.pos = list(pos)
         self.size = list(size)
@@ -21,7 +22,7 @@ class Entity:
     def set_action(self, action):
         if self.action != action:
             self.action = action
-            self.animation = self.animations[self.type + "/" + self.action].copy()
+            self.animation = self.game.animated_assets[self.type + "/" + self.action].copy()
 
     def update(self):
         self.animation.update()
@@ -34,6 +35,10 @@ class Entity:
                 self.pos[1] - offset[1] + self.animation_offset[1],
             ),
         )
+
+    def animate_death(self):
+        for i in range(30):
+            self.game.sparks.append(Spark(self.rect().center, random.random() * math.pi * 2, 2 + random.random()))
 
 
 class PhysicsEntity(Entity):
@@ -107,7 +112,7 @@ class Player(PhysicsEntity):
         self.air_time = 0
         self.jumps = 1
         self.wall_slide = False
-        self.dead = False
+        self.died = 0
         self.flip = False
         self.velocity = [0, 0]
 
@@ -118,7 +123,8 @@ class Player(PhysicsEntity):
             self.jumps = 1
 
         if self.air_time > 180:
-            self.dead = True
+            self.animate_death()
+            self.died += 1
 
         self.wall_slide = False
         if (self.collisions["right"] or self.collisions["left"]) and self.air_time > 4:

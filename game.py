@@ -31,21 +31,42 @@ class Game:
         self.level = 0
         self.levels = get_level_list()
         self.tilemap = Tilemap(self.tile_assets)
-        self.tilemap.load(self.levels[self.level])
 
         # entities
-        self.player = Player(self.animated_assets, pos=(300, 60))
+        self.sparks = []
+        self.player = Player(self, pos=(300, 60))
 
-        self.reset_level()
+        # transition
+        self.transition = -30
 
-    def reset_level(self):
+        self.load_level()
+
+    def load_level(self):
+        self.transition = -30
+        self.tilemap.load(self.levels[self.level])
+        self.sparks = []
         self.player.reset_at((300, 60))
 
     def run(self):
         running = True
         while running:
-            if self.player.dead:
-                self.reset_level()
+
+            if self.transition < 0:
+                self.transition += 1
+
+            if self.player.died:
+                self.player.died += 1
+                if self.player.died >= 10:
+                    self.transition = min(30, self.transition + 1)
+                if self.player.died > 40:
+                    self.load_level()
+
+            if False:
+                # player reached target
+                self.transition += 1
+                if self.transition > 30:
+                    self.level = (self.level + 1) % len(self.levels)
+                    self.load_level(self.level)
 
             # camera position centered on player
             self.scroll[0] += self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]
@@ -56,10 +77,9 @@ class Game:
             self.display.fill((0, 0, 0, 0))
             self.render_background()
             self.tilemap.render(self.display, render_offset)
-
-            if not self.player.dead:
-                self.player.update(movement=(self.movement[1] - self.movement[0], 0), tilemap=self.tilemap)
-                self.player.render(self.display, render_offset)
+            self.render_sparks(render_offset)
+            self.render_player(render_offset)
+            self.render_transition()
 
             # render display to screen
             self.screen.fill((0, 0, 0, 0))
@@ -91,10 +111,29 @@ class Game:
 
             self.clock.tick(FPS)
 
-    def resize(self, size):
-        # fixed height, variable width
-        self.display_scale = INITIAL_DISPLAY_SIZE[1] / size[1]
-        self.display = pygame.Surface((size[0] * self.display_scale, INITIAL_DISPLAY_SIZE[1]))
+    def render_transition(self):
+        if self.transition:
+            transition_surface = pygame.Surface(self.display.get_size())
+            pygame.draw.circle(
+                transition_surface,
+                (255, 255, 255),
+                (self.display.get_width() // 2, self.display.get_height() // 2),
+                (30 - abs(self.transition)) * self.tilemap.tile_size,
+            )
+            transition_surface.set_colorkey((255, 255, 255))
+            self.display.blit(transition_surface, (0, 0))
+
+    def render_player(self, render_offset):
+        if not self.player.died:
+            self.player.update(movement=(self.movement[1] - self.movement[0], 0), tilemap=self.tilemap)
+            self.player.render(self.display, render_offset)
+
+    def render_sparks(self, render_offset):
+        for spark in self.sparks.copy():
+            if not spark.update():
+                spark.render(self.display, render_offset)
+            else:
+                self.sparks.remove(spark)
 
     def render_background(self):
         pygame.gfxdraw.textured_polygon(
@@ -109,6 +148,11 @@ class Game:
             self.tile_assets["backgrounds"][self.tilemap.background].get_width(),
             self.tile_assets["backgrounds"][self.tilemap.background].get_height(),
         )
+
+    def resize(self, size):
+        # fixed height, variable width
+        self.display_scale = INITIAL_DISPLAY_SIZE[1] / size[1]
+        self.display = pygame.Surface((size[0] * self.display_scale, INITIAL_DISPLAY_SIZE[1]))
 
 
 if __name__ == "__main__":
