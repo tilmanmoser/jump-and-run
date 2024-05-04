@@ -50,6 +50,7 @@ def load_tile_assets():
         "tiles/stone": load_images("tiles/stone"),
         "tiles/swamp": load_images("tiles/swamp"),
         "tiles/wall": load_images("tiles/wall"),
+        "caves/stone": load_images("caves/stone"),
         "decor/frames": load_images("decor/frames"),
         "decor/trees": load_images("decor/trees"),
         "decor/bushes": load_images("decor/bushes"),

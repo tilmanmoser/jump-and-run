@@ -1,9 +1,10 @@
 import pygame
 import pygame.gfxdraw
 
+from scripts.clouds import Clouds
 from scripts.entities import Player
 from scripts.tilemap import Tilemap
-from scripts.utils import get_level_list, load_animated_assets, load_tile_assets
+from scripts.utils import get_level_list, load_animated_assets, load_image, load_images, load_tile_assets
 
 INITIAL_DISPLAY_SIZE = [800, 500]
 FPS = 60
@@ -26,6 +27,8 @@ class Game:
         # assets
         self.tile_assets = load_tile_assets()
         self.animated_assets = load_animated_assets()
+        self.mountains = load_image("mountains.png")
+        self.clouds = Clouds(load_images("clouds"), count=16)
 
         # levelmaps
         self.level = 0
@@ -75,7 +78,7 @@ class Game:
 
             # render display & update objects
             self.display.fill((0, 0, 0, 0))
-            self.render_background()
+            self.render_background(render_offset)
             self.tilemap.render(self.display, render_offset)
             self.render_sparks(render_offset)
             self.render_player(render_offset)
@@ -135,7 +138,7 @@ class Game:
             else:
                 self.sparks.remove(spark)
 
-    def render_background(self):
+    def render_background(self, render_offset):
         pygame.gfxdraw.textured_polygon(
             self.display,
             [
@@ -148,6 +151,11 @@ class Game:
             self.tile_assets["backgrounds"][self.tilemap.background].get_width(),
             self.tile_assets["backgrounds"][self.tilemap.background].get_height(),
         )
+        self.display.blit(
+            self.mountains, ((self.display.get_width() - self.mountains.get_width()) // 2, self.display.get_height() - self.mountains.get_height())
+        )
+        self.clouds.update()
+        self.clouds.draw(self.display, render_offset)
 
     def resize(self, size):
         # fixed height, variable width
