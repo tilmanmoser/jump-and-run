@@ -101,6 +101,8 @@ class PhysicsEntity(Entity):
 class Player(PhysicsEntity):
     def __init__(self, animations, pos):
         super().__init__(animations, "player", pos, size=(16, 16), animation_offset=(-8, -16))
+        self.lives = 3
+        self.fruits = 0
         self.speed = 2
         self.air_time = 0
         self.jumps = 1
@@ -116,6 +118,17 @@ class Player(PhysicsEntity):
         self.flip = False
         self.velocity = [0, 0]
 
+    def die(self):
+        self.lives = max(0, self.lives - 1)
+        self.died += 1
+        self.animate_death()
+
+    def collect_fruit(self):
+        self.fruits += 1
+        if self.fruits >= 100:
+            self.fruits = self.fruits % 100
+            self.lives += 1
+
     def update(self, tilemap: Tilemap, movement=(0, 0)):
         self.air_time += 1
         if self.collisions["down"]:
@@ -123,8 +136,7 @@ class Player(PhysicsEntity):
             self.jumps = 1
 
         if self.air_time > 180:
-            self.animate_death()
-            self.died += 1
+            self.die()
 
         self.wall_slide = False
         if (self.collisions["right"] or self.collisions["left"]) and self.air_time > 4:
@@ -206,6 +218,7 @@ class Fruit(Entity):
         if not self.collected:
             if self.rect().colliderect(self.game.player.rect()):
                 self.collected += 1
+                self.game.player.collect_fruit()
                 for i in range(20):
                     self.bubbles.append(
                         {

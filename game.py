@@ -21,6 +21,9 @@ class Game:
         self.display_scale = 1
         self.clock = pygame.Clock()
 
+        # topbar (stats)
+        self.stats_surface = pygame.Surface((self.display.get_width() - 16, 16), pygame.SRCALPHA)
+        self.stats_images = load_images("stats")
         self.font = pygame.Font("data/fonts/press-start-2p-latin-400-normal.ttf", 16)
 
         # user inputs & derived states
@@ -34,8 +37,6 @@ class Game:
         self.mountains = load_image("mountains.png")
         self.clouds = Clouds(load_images("clouds"), count=16)
 
-        # levelmaps
-        self.level = 0
         self.levels = get_level_list()
         self.tilemap = Tilemap(self.tile_assets)
 
@@ -44,13 +45,21 @@ class Game:
         self.fruits = {}
         self.player = Player(self, pos=(300, 60))
 
-        # transition
+        # game states
+        self.level = 0
+        self.time = 300 * FPS
         self.transition = -30
+        self.load_level()
 
+    def reset(self):
+        self.player.lives = 3
+        self.player.fruits = 0
+        self.level = 0
         self.load_level()
 
     def load_level(self):
         self.transition = -30
+        self.time = 300 * FPS
         self.tilemap.load(self.levels[self.level])
         self.sparks = []
         self.fruits = {}
@@ -62,28 +71,34 @@ class Game:
     def run(self):
         running = True
         while running:
+            # camera position centered on player
+            self.scroll[0] += self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]
+            self.scroll[1] += self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]
+            self.render_offset = (int(self.scroll[0]), int(self.scroll[1]))
 
-            if self.transition < 0:
-                self.transition += 1
-
+            # level transitions
             if self.player.died:
                 self.player.died += 1
                 if self.player.died >= 10:
                     self.transition = min(30, self.transition + 1)
                 if self.player.died > 40:
-                    self.load_level()
-
-            if False:
+                    if self.player.lives <= 0:
+                        self.reset()
+                    else:
+                        self.load_level()
+            elif False:
                 # player reached target
                 self.transition += 1
                 if self.transition > 30:
                     self.level = (self.level + 1) % len(self.levels)
                     self.load_level(self.level)
+            else:
+                self.time -= 1
+                if self.time <= 0:
+                    self.player.die()
 
-            # camera position centered on player
-            self.scroll[0] += self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]
-            self.scroll[1] += self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]
-            self.render_offset = (int(self.scroll[0]), int(self.scroll[1]))
+            if self.transition < 0:
+                self.transition += 1
 
             # render display & update objects
             self.display.fill((0, 0, 0, 0))
@@ -92,6 +107,7 @@ class Game:
             self.render_sparks()
             self.render_fruits()
             self.render_player()
+            self.render_stats()
             self.render_transition()
 
             # render display to screen
@@ -154,6 +170,25 @@ class Game:
                 spark.render(self.display, self.render_offset)
             else:
                 self.sparks.remove(spark)
+
+    def render_stats(self):
+        self.stats_surface.fill((0, 0, 0, 0))
+        # lives
+        self.stats_surface.blit(self.stats_images[0], (0, 0))
+        self.stats_surface.blit(self.font.render(str(self.player.lives), False, (255, 255, 255)), (20, 0))
+        # fruits
+        self.stats_surface.blit(self.stats_images[1], (80, 0))
+        self.stats_surface.blit(self.font.render(str(self.player.fruits).zfill(2), False, (255, 255, 255)), (100, 0))
+        # time
+        time = self.font.render(str(self.time // FPS), False, (255, 255, 255))
+        self.stats_surface.blit(time, (self.stats_surface.get_width() - time.get_width(), 0))
+
+        stats_mask = pygame.mask.from_surface(self.stats_surface)
+        stats_mask = stats_mask.convolve(pygame.Mask((5, 5), fill=True))
+        silhouette = stats_mask.to_surface(setcolor=(0, 0, 33), unsetcolor=(0, 0, 0, 0))
+        self.display.blit(silhouette, (6, 6))
+
+        self.display.blit(self.stats_surface, (8, 8))
 
     def render_background(self):
         pygame.gfxdraw.textured_polygon(
