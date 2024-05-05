@@ -3,7 +3,7 @@ import pygame
 import pygame.gfxdraw
 
 from scripts.clouds import Clouds
-from scripts.entities import Fruit, Player
+from scripts.entities import Entity, Fruit, Player
 from scripts.tilemap import Tilemap
 from scripts.utils import get_level_list, load_animated_assets, load_image, load_images, load_tile_assets
 
@@ -44,11 +44,14 @@ class Game:
         self.sparks = []
         self.fruits = {}
         self.player = Player(self, pos=(300, 60))
+        self.start = Entity(self, "start", (0, 0), (64, 64), (-16, -48))
+        self.end = Entity(self, "end", (0, 0), (64, 64), (-16, -48))
 
         # game states
         self.level = 0
         self.time = 300 * FPS
         self.transition = -30
+        self.reached_level_end = False
         self.load_level()
 
     def reset(self):
@@ -60,13 +63,24 @@ class Game:
     def load_level(self):
         self.transition = -30
         self.time = 300 * FPS
+        self.reached_level_end = False
+
         self.tilemap.load(self.levels[self.level])
+
+        starters = self.tilemap.extract([("spawners", 0)])
+        if starters:
+            self.start.pos = starters[0]["pos"]
+        enders = self.tilemap.extract([("spawners", 1)])
+        if enders:
+            self.end.pos = enders[0]["pos"]
+
+        self.player.reset_at(self.start.pos)
+
         self.sparks = []
         self.fruits = {}
         surface_tiles = self.tilemap.find_surface_tiles()
         for pos in random.sample(surface_tiles, int(len(surface_tiles) // 8)):
             self.fruits[str(pos[0]) + ";" + str(pos[1])] = Fruit(self, (pos[0] * self.tilemap.tile_size, pos[1] * self.tilemap.tile_size))
-        self.player.reset_at((300, 60))
 
     def run(self):
         running = True
@@ -86,12 +100,13 @@ class Game:
                         self.reset()
                     else:
                         self.load_level()
-            elif False:
-                # player reached target
+            elif self.reached_level_end:
                 self.transition += 1
                 if self.transition > 30:
                     self.level = (self.level + 1) % len(self.levels)
-                    self.load_level(self.level)
+                    self.load_level()
+            elif self.player.rect().colliderect(self.end.rect()):
+                self.reached_level_end = True
             else:
                 self.time -= 1
                 if self.time <= 0:
@@ -104,8 +119,9 @@ class Game:
             self.display.fill((0, 0, 0, 0))
             self.render_background()
             self.tilemap.render(self.display, self.render_offset)
-            self.render_sparks()
+            self.render_checkpoints()
             self.render_fruits()
+            self.render_sparks()
             self.render_player()
             self.render_stats()
             self.render_transition()
@@ -151,6 +167,12 @@ class Game:
             )
             transition_surface.set_colorkey((255, 255, 255))
             self.display.blit(transition_surface, (0, 0))
+
+    def render_checkpoints(self):
+        self.start.update()
+        self.start.render(self.display, self.render_offset)
+        self.end.update()
+        self.end.render(self.display, self.render_offset)
 
     def render_fruits(self):
         for fruit in self.fruits.copy():

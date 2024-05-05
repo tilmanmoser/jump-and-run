@@ -152,6 +152,26 @@ class Tilemap:
                     pos.append(above)
         return pos
 
+    def extract(self, id_pairs, keep=False):
+        matches = []
+        for tile in self.offgrid.copy():
+            if (tile["type"], tile["variant"]) in id_pairs:
+                matches.append(tile.copy())
+                if not keep:
+                    self.offgrid.remove(tile)
+
+        for loc in self.tiles.copy():
+            tile = self.tiles[loc]
+            if (tile["type"], tile["variant"]) in id_pairs:
+                matches.append(tile.copy())
+                matches[-1]["pos"] = matches[-1]["pos"].copy()
+                matches[-1]["pos"][0] *= self.tile_size
+                matches[-1]["pos"][1] *= self.tile_size
+                if not keep:
+                    del self.tiles[loc]
+
+        return matches
+
     def render(self, surface: pygame.Surface, offset=(0, 0)):
         for tile in self.offgrid:
             surface.blit(
