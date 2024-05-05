@@ -26,6 +26,7 @@ class Game:
         # user inputs & derived states
         self.movement = [False, False]
         self.scroll = [0, 0]
+        self.render_offset = (0, 0)
 
         # assets
         self.tile_assets = load_tile_assets()
@@ -82,15 +83,15 @@ class Game:
             # camera position centered on player
             self.scroll[0] += self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]
             self.scroll[1] += self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]
-            render_offset = (int(self.scroll[0]), int(self.scroll[1]))
+            self.render_offset = (int(self.scroll[0]), int(self.scroll[1]))
 
             # render display & update objects
             self.display.fill((0, 0, 0, 0))
-            self.render_background(render_offset)
-            self.tilemap.render(self.display, render_offset)
-            self.render_sparks(render_offset)
-            self.render_fruits(render_offset)
-            self.render_player(render_offset)
+            self.render_background()
+            self.tilemap.render(self.display, self.render_offset)
+            self.render_sparks()
+            self.render_fruits()
+            self.render_player()
             self.render_transition()
 
             # render display to screen
@@ -135,26 +136,26 @@ class Game:
             transition_surface.set_colorkey((255, 255, 255))
             self.display.blit(transition_surface, (0, 0))
 
-    def render_fruits(self, render_offset):
+    def render_fruits(self):
         for fruit in self.fruits.copy():
             if self.fruits[fruit].update():
                 del self.fruits[fruit]
             else:
-                self.fruits[fruit].render(self.display, render_offset)
+                self.fruits[fruit].render(self.display, self.render_offset)
 
-    def render_player(self, render_offset):
+    def render_player(self):
         if not self.player.died:
             self.player.update(movement=(self.movement[1] - self.movement[0], 0), tilemap=self.tilemap)
-            self.player.render(self.display, render_offset)
+            self.player.render(self.display, self.render_offset)
 
-    def render_sparks(self, render_offset):
+    def render_sparks(self):
         for spark in self.sparks.copy():
             if not spark.update():
-                spark.render(self.display, render_offset)
+                spark.render(self.display, self.render_offset)
             else:
                 self.sparks.remove(spark)
 
-    def render_background(self, render_offset):
+    def render_background(self):
         pygame.gfxdraw.textured_polygon(
             self.display,
             [
@@ -171,7 +172,7 @@ class Game:
             self.mountains, ((self.display.get_width() - self.mountains.get_width()) // 2, self.display.get_height() - self.mountains.get_height())
         )
         self.clouds.update()
-        self.clouds.draw(self.display, render_offset)
+        self.clouds.draw(self.display, self.render_offset)
 
     def resize(self, size):
         # fixed height, variable width
