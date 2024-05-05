@@ -1,8 +1,9 @@
+import random
 import pygame
 import pygame.gfxdraw
 
 from scripts.clouds import Clouds
-from scripts.entities import Player
+from scripts.entities import Fruit, Player
 from scripts.tilemap import Tilemap
 from scripts.utils import get_level_list, load_animated_assets, load_image, load_images, load_tile_assets
 
@@ -19,6 +20,8 @@ class Game:
         self.display = pygame.Surface(INITIAL_DISPLAY_SIZE)
         self.display_scale = 1
         self.clock = pygame.Clock()
+
+        self.font = pygame.Font("data/fonts/press-start-2p-latin-400-normal.ttf", 16)
 
         # user inputs & derived states
         self.movement = [False, False]
@@ -37,6 +40,7 @@ class Game:
 
         # entities
         self.sparks = []
+        self.fruits = {}
         self.player = Player(self, pos=(300, 60))
 
         # transition
@@ -48,6 +52,10 @@ class Game:
         self.transition = -30
         self.tilemap.load(self.levels[self.level])
         self.sparks = []
+        self.fruits = {}
+        surface_tiles = self.tilemap.find_surface_tiles()
+        for pos in random.sample(surface_tiles, int(len(surface_tiles) // 8)):
+            self.fruits[str(pos[0]) + ";" + str(pos[1])] = Fruit(self, (pos[0] * self.tilemap.tile_size, pos[1] * self.tilemap.tile_size))
         self.player.reset_at((300, 60))
 
     def run(self):
@@ -81,6 +89,7 @@ class Game:
             self.render_background(render_offset)
             self.tilemap.render(self.display, render_offset)
             self.render_sparks(render_offset)
+            self.render_fruits(render_offset)
             self.render_player(render_offset)
             self.render_transition()
 
@@ -125,6 +134,13 @@ class Game:
             )
             transition_surface.set_colorkey((255, 255, 255))
             self.display.blit(transition_surface, (0, 0))
+
+    def render_fruits(self, render_offset):
+        for fruit in self.fruits.copy():
+            if self.fruits[fruit].update():
+                del self.fruits[fruit]
+            else:
+                self.fruits[fruit].render(self.display, render_offset)
 
     def render_player(self, render_offset):
         if not self.player.died:

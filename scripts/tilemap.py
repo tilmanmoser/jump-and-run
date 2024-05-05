@@ -138,9 +138,19 @@ class Tilemap:
 
     def solid_check(self, pos):
         tile_loc = str(int(pos[0] // self.tile_size)) + ";" + str(int(pos[1] // self.tile_size))
-        if tile_loc in self.tilemap:
-            if self.tiles[tile_loc]["type"].startswith("tiles/"):
+        if tile_loc in self.tiles:
+            if self.tiles[tile_loc]["type"].startswith("tiles"):
                 return self.tiles[tile_loc]
+
+    def find_surface_tiles(self):
+        pos = []
+        for tile_loc in self.tiles:
+            tile = self.tiles[tile_loc]
+            if tile["type"].startswith("tiles") and tile["variant"] in (0, 1, 2, 3, 12, 13, 14, 15):
+                above = (tile["pos"][0], tile["pos"][1] - 1)
+                if not self.solid_check((above[0] * self.tile_size, above[1] * self.tile_size)):
+                    pos.append(above)
+        return pos
 
     def render(self, surface: pygame.Surface, offset=(0, 0)):
         for tile in self.offgrid:

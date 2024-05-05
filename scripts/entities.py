@@ -185,6 +185,54 @@ class Player(PhysicsEntity):
             return True
 
 
+class Fruit(Entity):
+    TYPES = ["apple", "bananas", "cherries", "kiwi", "melon", "orange", "pineapple", "strawberry"]
+    COLORS = [(250, 145, 137), (252, 174, 124), (255, 230, 153), (249, 255, 181), (179, 245, 188), (214, 246, 255), (226, 203, 247), (209, 189, 255)]
+
+    def __init__(self, game, pos):
+        super().__init__(
+            game,
+            "fruits/" + random.sample(Fruit.TYPES, 1)[0],
+            pos,
+            (16, 16),
+            (-8, -8),
+        )
+        self.collected = 0
+        self.bubbles = []
+
+    def update(self):
+        super().update()
+
+        if not self.collected:
+            if self.rect().colliderect(self.game.player.rect()):
+                self.collected += 1
+                for i in range(20):
+                    self.bubbles.append(
+                        {
+                            "pos": [int(self.pos[0] + self.size[0] / 2), int(self.pos[1] + self.size[1] / 2)],
+                            "radius": random.random() * self.size[0] / 4,
+                            "speed": random.random() * 5 + 2,
+                            "angle": random.random() * (math.pi * 2),
+                            "color": random.sample(Fruit.COLORS, 1)[0],
+                        }
+                    )
+        else:
+            self.collected += 1
+            for bubble in self.bubbles:
+                bubble["pos"][0] += math.cos(bubble["angle"]) * bubble["speed"]
+                bubble["pos"][1] += math.sin(bubble["angle"]) * bubble["speed"]
+                bubble["radius"] *= 1.01
+
+            if self.collected >= 120:
+                return True
+
+    def render(self, surface, offset):
+        if not self.collected:
+            super().render(surface, offset)
+        for bubble in self.bubbles:
+            pygame.draw.circle(surface, bubble["color"], (bubble["pos"][0] - offset[0], bubble["pos"][1] - offset[1]), bubble["radius"])
+
+
 class Enemy(Entity):
     def __init__(self) -> None:
         super().__init__()

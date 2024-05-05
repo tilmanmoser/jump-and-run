@@ -68,6 +68,14 @@ def load_animated_assets():
         "player/fall": Animation(load_images("entities/player/fall")),
         "player/wall-slide": Animation(load_images("entities/player/wall-slide")),
         "player/wall-jump": Animation(load_images("entities/player/wall-jump"), image_duration=4),
+        "fruits/apple/idle": Animation(load_images("fruits/apple/idle"), image_duration=4),
+        "fruits/bananas/idle": Animation(load_images("fruits/bananas/idle"), image_duration=4),
+        "fruits/cherries/idle": Animation(load_images("fruits/cherries/idle"), image_duration=4),
+        "fruits/kiwi/idle": Animation(load_images("fruits/kiwi/idle"), image_duration=4),
+        "fruits/melon/idle": Animation(load_images("fruits/melon/idle"), image_duration=4),
+        "fruits/orange/idle": Animation(load_images("fruits/orange/idle"), image_duration=4),
+        "fruits/pineapple/idle": Animation(load_images("fruits/pineapple/idle"), image_duration=4),
+        "fruits/strawberry/idle": Animation(load_images("fruits/strawberry/idle"), image_duration=4),
     }
 
 
