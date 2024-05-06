@@ -62,8 +62,8 @@ def load_tile_assets():
 
 def load_animated_assets():
     return {
-        "start/idle": Animation(load_images("checkpoints/start/idle"), image_duration=6),
-        "end/idle": Animation(load_images("checkpoints/end/idle"), image_duration=6),
+        "start/idle": Animation(load_images("checkpoints/start/idle"), image_duration=4),
+        "end/idle": Animation(load_images("checkpoints/end/idle"), image_duration=4),
         "player/idle": Animation(load_images("entities/player/idle"), image_duration=6),
         "player/run": Animation(load_images("entities/player/run"), image_duration=4),
         "player/jump": Animation(load_images("entities/player/jump")),

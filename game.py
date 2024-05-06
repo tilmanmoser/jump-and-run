@@ -45,7 +45,7 @@ class Game:
         self.tilemap = Tilemap(self.tile_assets)
 
         # entities
-        self.start = Entity(self, "start", (0, 0), (64, 64), (-16, -48))
+        self.start = Entity(self, "start", (0, 0), (64, 64), (-32, -48))
         self.end = Entity(self, "end", (0, 0), (64, 64), (-16, -48))
         self.player = Player(self, pos=(0, 0))
         self.particles = Particles()
@@ -70,20 +70,23 @@ class Game:
         self.reached_level_end = False
 
         self.tilemap.load(self.levels[self.level])
-
-        starters = self.tilemap.extract([("spawners", 0)])
-        if starters:
-            self.start.pos = starters[0]["pos"]
-        enders = self.tilemap.extract([("spawners", 1)])
-        if enders:
-            self.end.pos = enders[0]["pos"]
-
+        self.spawn_fruits()
+        self.spawn_entities()
         self.player.reset_at(self.start.pos)
 
+    def spawn_fruits(self):
         self.fruits = {}
         surface_tiles = self.tilemap.find_surface_tiles()
         for pos in random.sample(surface_tiles, int(len(surface_tiles) // 8)):
             self.fruits[str(pos[0]) + ";" + str(pos[1])] = Fruit(self, (pos[0] * self.tilemap.tile_size, pos[1] * self.tilemap.tile_size))
+
+    def spawn_entities(self):
+        for spawner in self.tilemap.extract([("spawners", 0), ("spawners", 1)]):
+            if spawner["type"] == "spawners":
+                if spawner["variant"] == 0:
+                    self.start.pos = spawner["pos"]
+                if spawner["variant"] == 1:
+                    self.end.pos = spawner["pos"]
 
     def run(self):
         running = True
