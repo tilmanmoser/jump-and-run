@@ -188,18 +188,22 @@ class Player(PhysicsEntity):
             else:
                 self.set_action("idle")
 
-        # acceleration
+        # acceleration and momentum
         if self.air_time <= 4:
             if movement[0] > 0:
-                self.velocity[0] = min(2, self.velocity[0] + 0.15)
+                self.velocity[0] = min(2, self.velocity[0] + 0.1)
             elif movement[0] < 0:
-                self.velocity[0] = max(-2, self.velocity[0] - 0.15)
-
-        # momentum
-        if self.velocity[0] > 0:
-            self.velocity[0] = max(0, self.velocity[0] - 0.05)
+                self.velocity[0] = max(-2, self.velocity[0] - 0.1)
+            else:
+                if self.velocity[0] > 0:
+                    self.velocity[0] = max(0, self.velocity[0] - 0.1)
+                else:
+                    self.velocity[0] = min(0, self.velocity[0] + 0.1)
         else:
-            self.velocity[0] = min(0, self.velocity[0] + 0.05)
+            if self.velocity[0] > 0:
+                self.velocity[0] = max(0, self.velocity[0] - 0.025)
+            else:
+                self.velocity[0] = min(0, self.velocity[0] + 0.025)
 
         super().update(tilemap, movement=(movement[0] * self.speed, movement[1]))
 
