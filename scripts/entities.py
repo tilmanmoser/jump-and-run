@@ -176,7 +176,7 @@ class Player(PhysicsEntity):
         else:
             if self.air_time > 4:
                 if self.velocity[1] < 0:
-                    if self.velocity[0] != 0:
+                    if abs(self.velocity[0]) > 2:
                         self.set_action("wall-jump")
                     else:
                         self.set_action("jump")
@@ -188,10 +188,16 @@ class Player(PhysicsEntity):
             else:
                 self.set_action("idle")
 
+        if self.air_time <= 4:
+            if movement[0] > 0:
+                self.velocity[0] = min(2, self.velocity[0] + 0.15)
+            elif movement[0] < 0:
+                self.velocity[0] = max(-2, self.velocity[0] - 0.15)
+
         if self.velocity[0] > 0:
-            self.velocity[0] = max(0, self.velocity[0] - 0.1)
+            self.velocity[0] = max(0, self.velocity[0] - 0.05)
         else:
-            self.velocity[0] = min(0, self.velocity[0] + 0.1)
+            self.velocity[0] = min(0, self.velocity[0] + 0.05)
 
         super().update(tilemap, movement=(movement[0] * self.speed, movement[1]))
 
