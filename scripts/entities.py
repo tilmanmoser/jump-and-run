@@ -188,12 +188,14 @@ class Player(PhysicsEntity):
             else:
                 self.set_action("idle")
 
+        # acceleration
         if self.air_time <= 4:
             if movement[0] > 0:
                 self.velocity[0] = min(2, self.velocity[0] + 0.15)
             elif movement[0] < 0:
                 self.velocity[0] = max(-2, self.velocity[0] - 0.15)
 
+        # momentum
         if self.velocity[0] > 0:
             self.velocity[0] = max(0, self.velocity[0] - 0.05)
         else:
