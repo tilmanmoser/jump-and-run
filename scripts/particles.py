@@ -2,7 +2,7 @@ import math
 import random
 
 import pygame
-from scripts.utils import Animation
+from scripts.assets import Animation
 
 
 class Bubble:
@@ -60,6 +60,33 @@ class Spark:
         ]
 
         pygame.draw.polygon(surface, (255, 255, 255), render_points)
+
+
+class Leaf:
+    def __init__(self, pos, animation: Animation):
+        self.pos = list(pos)
+        self.animation = animation.copy()
+        self.ttl = random.randint(120, 240)
+
+    def update(self):
+        self.ttl -= 1
+        if self.ttl <= 0:
+            return True
+
+        self.pos[0] += math.sin(self.animation.frame * 0.035) * 0.3
+        self.pos[1] += 0.3
+
+        self.animation.update()
+
+    def render(self, surface, offset=(0, 0)):
+        img = self.animation.image()
+        surface.blit(
+            img,
+            (
+                self.pos[0] - offset[0] - img.get_width() // 2,
+                self.pos[1] - offset[1] - img.get_height() // 2,
+            ),
+        )
 
 
 class Particles:

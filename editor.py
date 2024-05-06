@@ -2,7 +2,7 @@ import sys
 import pygame
 import pygame.gfxdraw
 
-from scripts.utils import load_tile_assets
+from scripts.assets import load_tile_assets
 from scripts.tilemap import Tilemap
 
 INITIAL_DISPLAY_SIZE = [800, 500]

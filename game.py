@@ -4,9 +4,9 @@ import pygame.gfxdraw
 
 from scripts.clouds import Clouds
 from scripts.entities import Entity, Fruit, Player
-from scripts.particles import Particles
+from scripts.particles import Leaf, Particles
 from scripts.tilemap import Tilemap
-from scripts.utils import get_level_list, load_animated_assets, load_image, load_images, load_tile_assets
+from scripts.assets import LEAF_SPAWN_RECTS, get_level_list, load_animated_assets, load_image, load_images, load_tile_assets
 
 INITIAL_DISPLAY_SIZE = [800, 500]
 FPS = 60
@@ -49,6 +49,7 @@ class Game:
         self.end = Entity(self, "end", (0, 0), (64, 64), (-16, -48))
         self.player = Player(self, pos=(0, 0))
         self.particles = Particles()
+        self.leaf_spawners = []
         self.fruits = {}
 
         # game states
@@ -72,6 +73,19 @@ class Game:
         self.tilemap.load(self.levels[self.level])
         self.spawn_fruits()
         self.spawn_entities()
+        self.leaf_spawners = []
+
+        for tree in self.tilemap.extract(
+            [("decor/trees", 0), ("decor/trees", 1), ("decor/trees", 2), ("decor/trees", 3), ("decor/trees", 4), ("decor/trees", 5)], keep=True
+        ):
+            self.leaf_spawners.append(
+                pygame.Rect(
+                    tree["pos"][0] + LEAF_SPAWN_RECTS[tree["variant"]].x,
+                    tree["pos"][1] + LEAF_SPAWN_RECTS[tree["variant"]].y,
+                    LEAF_SPAWN_RECTS[tree["variant"]].width,
+                    LEAF_SPAWN_RECTS[tree["variant"]].height,
+                )
+            )
         self.player.reset_at(self.start.pos)
 
     def spawn_fruits(self):
@@ -87,6 +101,12 @@ class Game:
                     self.start.pos = spawner["pos"]
                 if spawner["variant"] == 1:
                     self.end.pos = spawner["pos"]
+
+    def spawn_leafs(self):
+        for rect in self.leaf_spawners:
+            if random.random() * 499999 < rect.width * rect.height:
+                pos = (rect.x + random.random() * rect.width, rect.y + random.random() * rect.height)
+                self.particles.add(Leaf(pos, self.animated_assets["particles/leaf"]))
 
     def run(self):
         running = True
@@ -120,6 +140,8 @@ class Game:
 
             if self.transition < 0:
                 self.transition += 1
+
+            self.spawn_leafs()
 
             # render display & update objects
             self.display.fill((0, 0, 0, 0))

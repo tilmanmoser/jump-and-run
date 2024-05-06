@@ -3,6 +3,15 @@ import pygame
 
 BASE_IMG_PATH = "data/images/"
 
+LEAF_SPAWN_RECTS = [
+    pygame.Rect(15, 15, 44, 38),
+    pygame.Rect(20, 18, 52, 52),
+    pygame.Rect(13, 13, 46, 42),
+    pygame.Rect(18, 11, 24, 78),
+    pygame.Rect(16, 11, 34, 38),
+    pygame.Rect(13, 9, 20, 20),
+]
+
 
 class Animation:
     def __init__(self, images, image_duration=5, loop=True):
@@ -78,6 +87,7 @@ def load_animated_assets():
         "fruits/orange/idle": Animation(load_images("fruits/orange/idle"), image_duration=4),
         "fruits/pineapple/idle": Animation(load_images("fruits/pineapple/idle"), image_duration=4),
         "fruits/strawberry/idle": Animation(load_images("fruits/strawberry/idle"), image_duration=4),
+        "particles/leaf": Animation(load_images("particles/leaf"), image_duration=12),
     }
 
 
