@@ -125,13 +125,13 @@ class Player(PhysicsEntity):
         super().__init__(animations, "player", pos, size=(16, 16), animation_offset=(-8, -16))
         self.lives = 3
         self.fruits = 0
-        self.speed = 2
+        self.speed = 3
         self.air_time = 0
         self.jumps = 1
         self.wall_slide = False
         self.dead = False
 
-    def reset_at(self, pos=(0, 0)):
+    def spawn(self, pos=(0, 0)):
         self.pos = list(pos)
         self.air_time = 0
         self.jumps = 1
@@ -188,22 +188,10 @@ class Player(PhysicsEntity):
             else:
                 self.set_action("idle")
 
-        # acceleration and momentum
-        if self.air_time <= 4:
-            if movement[0] > 0:
-                self.velocity[0] = min(2, self.velocity[0] + 0.1)
-            elif movement[0] < 0:
-                self.velocity[0] = max(-2, self.velocity[0] - 0.1)
-            else:
-                if self.velocity[0] > 0:
-                    self.velocity[0] = max(0, self.velocity[0] - 0.1)
-                else:
-                    self.velocity[0] = min(0, self.velocity[0] + 0.1)
+        if self.velocity[0] > 0:
+            self.velocity[0] = max(0, self.velocity[0] - 0.1)
         else:
-            if self.velocity[0] > 0:
-                self.velocity[0] = max(0, self.velocity[0] - 0.025)
-            else:
-                self.velocity[0] = min(0, self.velocity[0] + 0.025)
+            self.velocity[0] = min(0, self.velocity[0] + 0.1)
 
         super().update(tilemap, movement=(movement[0] * self.speed, movement[1]))
 
@@ -213,14 +201,14 @@ class Player(PhysicsEntity):
                 self.velocity[0] = 5
                 self.velocity[1] = -3
                 self.air_time = 5
-                self.jumps = max(0, self.jumps - 1)
+                self.jumps = 0
                 return True
 
             elif not self.flip and self.last_movement[0] > 0:
                 self.velocity[0] = -5
                 self.velocity[1] = -3
                 self.air_time = 5
-                self.jumps = max(0, self.jumps - 1)
+                self.jumps = 0
                 self.flip = not self.flip
                 return True
 

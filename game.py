@@ -86,7 +86,7 @@ class Game:
                     LEAF_SPAWN_RECTS[tree["variant"]].height,
                 )
             )
-        self.player.reset_at(self.start.pos)
+        self.player.spawn(self.start.pos)
 
     def spawn_fruits(self):
         self.fruits = {}
