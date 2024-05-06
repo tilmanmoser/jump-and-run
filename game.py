@@ -4,6 +4,7 @@ import pygame.gfxdraw
 
 from scripts.clouds import Clouds
 from scripts.entities import Entity, Fruit, Player
+from scripts.particles import Particles
 from scripts.tilemap import Tilemap
 from scripts.utils import get_level_list, load_animated_assets, load_image, load_images, load_tile_assets
 
@@ -20,6 +21,9 @@ class Game:
         self.display = pygame.Surface(INITIAL_DISPLAY_SIZE)
         self.display_scale = 1
         self.clock = pygame.Clock()
+
+        # background
+        self.bg_surface = pygame.Surface((0, 0))
 
         # topbar (stats)
         self.stats_surface = pygame.Surface((self.display.get_width() - 16, 16), pygame.SRCALPHA)
@@ -41,11 +45,11 @@ class Game:
         self.tilemap = Tilemap(self.tile_assets)
 
         # entities
-        self.sparks = []
-        self.fruits = {}
-        self.player = Player(self, pos=(300, 60))
         self.start = Entity(self, "start", (0, 0), (64, 64), (-16, -48))
         self.end = Entity(self, "end", (0, 0), (64, 64), (-16, -48))
+        self.player = Player(self, pos=(0, 0))
+        self.particles = Particles()
+        self.fruits = {}
 
         # game states
         self.level = 0
@@ -76,7 +80,6 @@ class Game:
 
         self.player.reset_at(self.start.pos)
 
-        self.sparks = []
         self.fruits = {}
         surface_tiles = self.tilemap.find_surface_tiles()
         for pos in random.sample(surface_tiles, int(len(surface_tiles) // 8)):
@@ -121,7 +124,7 @@ class Game:
             self.tilemap.render(self.display, self.render_offset)
             self.render_checkpoints()
             self.render_fruits()
-            self.render_sparks()
+            self.render_particles()
             self.render_player()
             self.render_stats()
             self.render_transition()
@@ -186,14 +189,14 @@ class Game:
             self.player.update(movement=(self.movement[1] - self.movement[0], 0), tilemap=self.tilemap)
             self.player.render(self.display, self.render_offset)
 
-    def render_sparks(self):
-        for spark in self.sparks.copy():
-            if not spark.update():
-                spark.render(self.display, self.render_offset)
-            else:
-                self.sparks.remove(spark)
+    def render_particles(self):
+        self.particles.update()
+        self.particles.render(self.display, self.render_offset)
 
     def render_stats(self):
+        if self.stats_surface.get_width() != self.display.get_width() - 16:
+            self.stats_surface = pygame.Surface((self.display.get_width() - 16, 16), pygame.SRCALPHA)
+
         self.stats_surface.fill((0, 0, 0, 0))
         # lives
         self.stats_surface.blit(self.stats_images[0], (0, 0))
@@ -213,21 +216,25 @@ class Game:
         self.display.blit(self.stats_surface, (8, 8))
 
     def render_background(self):
-        pygame.gfxdraw.textured_polygon(
-            self.display,
-            [
-                (0, 0),
-                (self.display.get_width(), 0),
-                self.display.get_size(),
-                (0, self.display.get_height()),
-            ],
-            self.tile_assets["backgrounds"][self.tilemap.background],
-            self.tile_assets["backgrounds"][self.tilemap.background].get_width(),
-            self.tile_assets["backgrounds"][self.tilemap.background].get_height(),
-        )
-        self.display.blit(
-            self.mountains, ((self.display.get_width() - self.mountains.get_width()) // 2, self.display.get_height() - self.mountains.get_height())
-        )
+        if self.bg_surface.get_width() != self.display.get_width():
+            self.bg_surface = pygame.Surface(self.display.get_size())
+            pygame.gfxdraw.textured_polygon(
+                self.bg_surface,
+                [
+                    (0, 0),
+                    (self.bg_surface.get_width(), 0),
+                    self.bg_surface.get_size(),
+                    (0, self.bg_surface.get_height()),
+                ],
+                self.tile_assets["backgrounds"][self.tilemap.background],
+                self.tile_assets["backgrounds"][self.tilemap.background].get_width(),
+                self.tile_assets["backgrounds"][self.tilemap.background].get_height(),
+            )
+            self.bg_surface.blit(
+                self.mountains, ((self.bg_surface.get_width() - self.mountains.get_width()) // 2, self.bg_surface.get_height() - self.mountains.get_height())
+            )
+
+        self.display.blit(self.bg_surface, (0, 0))
         self.clouds.update()
         self.clouds.draw(self.display, self.render_offset)
 
