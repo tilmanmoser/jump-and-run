@@ -72,8 +72,13 @@ class PhysicsEntity(Entity):
         self.last_movement = [0, 0]
 
     def update(self, tilemap: Tilemap, movement=(0, 0)):
+        rect = self.rect()
+        surface_tile = tilemap.solid_check((rect.centerx, rect.bottom + tilemap.tile_size // 2))
+        on_ice = surface_tile and surface_tile["type"] == "tiles/ice"
+        on_swamp = surface_tile and surface_tile["type"] == "tiles/swamp"
+
         frame_movement = (
-            movement[0] + self.velocity[0],
+            movement[0] * (0.5 if on_swamp else 1) + self.velocity[0],
             movement[1] + self.velocity[1],
         )
 
@@ -109,6 +114,16 @@ class PhysicsEntity(Entity):
                     entity_rect.left = rect.right
                     self.collisions["left"] = True
                 self.pos[0] = entity_rect.x
+
+        # ice sliding
+        if on_ice and movement[0] != self.last_movement[0] and self.last_movement[0] != 0:
+            self.velocity[0] = self.last_movement[0]
+
+        # normalize x-velocity
+        if self.velocity[0] > 0:
+            self.velocity[0] = max(0, self.velocity[0] - (0.1 if not on_ice else 0.05))
+        else:
+            self.velocity[0] = min(0, self.velocity[0] + (0.1 if not on_ice else 0.05))
 
         # flip animation into movement direction
         if movement[0] > 0:
@@ -188,11 +203,6 @@ class Player(PhysicsEntity):
                 self.set_action("run")
             else:
                 self.set_action("idle")
-
-        if self.velocity[0] > 0:
-            self.velocity[0] = max(0, self.velocity[0] - 0.2)
-        else:
-            self.velocity[0] = min(0, self.velocity[0] + 0.2)
 
         super().update(tilemap, movement=(movement[0] * self.speed, movement[1]))
 
@@ -284,6 +294,7 @@ class Pig(RunningEnemy):
         if do_rush:
             self.moving += 1
             self.speed = 2
+            self.set_action("run")
         else:
             self.speed = 1
         super().update(tilemap, movement)
