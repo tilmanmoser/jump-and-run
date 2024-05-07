@@ -79,6 +79,16 @@ def load_animated_assets():
         "player/fall": Animation(load_images("entities/player/fall")),
         "player/wall-slide": Animation(load_images("entities/player/wall-slide")),
         "player/wall-jump": Animation(load_images("entities/player/wall-jump"), image_duration=4),
+        "pig/idle": Animation(load_images("entities/pig/idle"), image_duration=6),
+        "pig/run": Animation(load_images("entities/pig/run"), image_duration=4),
+        "snail/idle": Animation(load_images("entities/snail/idle"), image_duration=6),
+        "snail/run": Animation(load_images("entities/snail/run"), image_duration=4),
+        "bee/idle": Animation(load_images("entities/bee/idle"), image_duration=6),
+        "bee/attack": Animation(load_images("entities/bee/attack"), image_duration=4),
+        "chicken/idle": Animation(load_images("entities/chicken/idle"), image_duration=6),
+        "chicken/run": Animation(load_images("entities/chicken/run"), image_duration=2),
+        "bunny/idle": Animation(load_images("entities/bunny/idle"), image_duration=6),
+        "bunny/run": Animation(load_images("entities/bunny/run"), image_duration=4),
         "fruits/apple/idle": Animation(load_images("fruits/apple/idle"), image_duration=4),
         "fruits/bananas/idle": Animation(load_images("fruits/bananas/idle"), image_duration=4),
         "fruits/cherries/idle": Animation(load_images("fruits/cherries/idle"), image_duration=4),
@@ -89,6 +99,10 @@ def load_animated_assets():
         "fruits/strawberry/idle": Animation(load_images("fruits/strawberry/idle"), image_duration=4),
         "particles/leaf": Animation(load_images("particles/leaf"), image_duration=12),
     }
+
+
+def load_projectile_assets():
+    return {"slime": load_image("projectiles/slime.png"), "sting": load_image("projectiles/sting.png")}
 
 
 def get_level_list():

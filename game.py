@@ -3,10 +3,10 @@ import pygame
 import pygame.gfxdraw
 
 from scripts.clouds import Clouds
-from scripts.entities import Entity, Fruit, Player
+from scripts.entities import Bee, Bunny, Chicken, Entity, Fruit, Pig, Player, Snail
 from scripts.particles import Leaf, Particles
 from scripts.tilemap import Tilemap
-from scripts.assets import LEAF_SPAWN_RECTS, get_level_list, load_animated_assets, load_image, load_images, load_tile_assets
+from scripts.assets import LEAF_SPAWN_RECTS, get_level_list, load_animated_assets, load_image, load_images, load_projectile_assets, load_tile_assets
 
 INITIAL_DISPLAY_SIZE = [800, 500]
 FPS = 60
@@ -38,6 +38,7 @@ class Game:
         # assets
         self.tile_assets = load_tile_assets()
         self.animated_assets = load_animated_assets()
+        self.projectile_assets = load_projectile_assets()
         self.mountains = load_image("mountains.png")
         self.clouds = Clouds(load_images("clouds"), count=16)
 
@@ -48,12 +49,14 @@ class Game:
         self.start = Entity(self, "start", (0, 0), (64, 64), (-32, -48))
         self.end = Entity(self, "end", (0, 0), (64, 64), (-16, -48))
         self.player = Player(self, pos=(0, 0))
+        self.enemies = []
         self.particles = Particles()
+        self.projectiles = []
         self.leaf_spawners = []
         self.fruits = {}
 
         # game states
-        self.level = 0
+        self.level = 1
         self.time = 300 * FPS
         self.transition = -30
         self.reached_level_end = False
@@ -71,9 +74,10 @@ class Game:
         self.reached_level_end = False
 
         self.tilemap.load(self.levels[self.level])
+        self.enemies = []
+        self.leaf_spawners = []
         self.spawn_fruits()
         self.spawn_entities()
-        self.leaf_spawners = []
 
         for tree in self.tilemap.extract(
             [("decor/trees", 0), ("decor/trees", 1), ("decor/trees", 2), ("decor/trees", 3), ("decor/trees", 4), ("decor/trees", 5)], keep=True
@@ -95,12 +99,24 @@ class Game:
             self.fruits[str(pos[0]) + ";" + str(pos[1])] = Fruit(self, (pos[0] * self.tilemap.tile_size, pos[1] * self.tilemap.tile_size))
 
     def spawn_entities(self):
-        for spawner in self.tilemap.extract([("spawners", 0), ("spawners", 1)]):
+        for spawner in self.tilemap.extract(
+            [("spawners", 0), ("spawners", 1), ("spawners", 2), ("spawners", 3), ("spawners", 4), ("spawners", 5), ("spawners", 6)]
+        ):
             if spawner["type"] == "spawners":
                 if spawner["variant"] == 0:
                     self.start.pos = spawner["pos"]
                 if spawner["variant"] == 1:
                     self.end.pos = spawner["pos"]
+                if spawner["variant"] == 2:
+                    self.enemies.append(Pig(self, spawner["pos"]))
+                if spawner["variant"] == 3:
+                    self.enemies.append(Snail(self, spawner["pos"]))
+                if spawner["variant"] == 4:
+                    self.enemies.append(Bee(self, spawner["pos"]))
+                if spawner["variant"] == 5:
+                    self.enemies.append(Chicken(self, spawner["pos"]))
+                if spawner["variant"] == 6:
+                    self.enemies.append(Bunny(self, spawner["pos"]))
 
     def spawn_leafs(self):
         for rect in self.leaf_spawners:
@@ -150,6 +166,8 @@ class Game:
             self.render_checkpoints()
             self.render_fruits()
             self.render_particles()
+            self.render_projectiles()
+            self.render_enemies()
             self.render_player()
             self.render_stats()
             self.render_transition()
@@ -217,6 +235,20 @@ class Game:
     def render_particles(self):
         self.particles.update()
         self.particles.render(self.display, self.render_offset)
+
+    def render_enemies(self):
+        for enemy in self.enemies.copy():
+            if enemy.update(self.tilemap):
+                self.enemies.remove(enemy)
+            else:
+                enemy.render(self.display, self.render_offset)
+
+    def render_projectiles(self):
+        for projectile in self.projectiles.copy():
+            if projectile.update(self.tilemap):
+                self.projectiles.remove(projectile)
+            else:
+                projectile.render(self.display, self.render_offset)
 
     def render_stats(self):
         if self.stats_surface.get_width() != self.display.get_width() - 16:

@@ -2,6 +2,7 @@ import math
 import random
 import pygame
 from scripts.particles import Bubble, Spark
+from scripts.projectile import Projectile
 from scripts.tilemap import Tilemap
 
 
@@ -64,8 +65,8 @@ class Fruit(Entity):
 
 
 class PhysicsEntity(Entity):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, game, e_type, pos, size, animation_offset=(0, 0)):
+        super().__init__(game, e_type, pos, size, animation_offset)
         self.collisions = {"up": False, "down": False, "right": False, "left": False}
         self.velocity = [0, 0]
         self.last_movement = [0, 0]
@@ -121,8 +122,8 @@ class PhysicsEntity(Entity):
 
 
 class Player(PhysicsEntity):
-    def __init__(self, animations, pos):
-        super().__init__(animations, "player", pos, size=(16, 16), animation_offset=(-8, -16))
+    def __init__(self, game, pos):
+        super().__init__(game, "player", pos, size=(16, 16), animation_offset=(-8, -16))
         self.lives = 3
         self.fruits = 0
         self.speed = 3
@@ -195,6 +196,17 @@ class Player(PhysicsEntity):
 
         super().update(tilemap, movement=(movement[0] * self.speed, movement[1]))
 
+        # collisions with enemies
+        p_rect = self.rect()
+        for enemy in self.game.enemies.copy():
+            e_rect = enemy.rect()
+            if p_rect.colliderect(e_rect):
+                if p_rect.centery < e_rect.centery:
+                    enemy.animate_death()
+                    self.game.enemies.remove(enemy)
+                else:
+                    self.die()
+
     def jump(self):
         if self.wall_slide:
             if self.flip and self.last_movement[0] < 0:
@@ -219,11 +231,141 @@ class Player(PhysicsEntity):
             return True
 
 
-class Enemy(Entity):
-    def __init__(self) -> None:
-        super().__init__()
+class RunningEnemy(PhysicsEntity):
+    def __init__(self, game, e_type, pos, size, animation_offset=(0, 0), speed=1):
+        super().__init__(game, e_type, pos, size, animation_offset)
+        self.flip = True
+        self.moving = 0
+        self.speed = speed
+
+    def update(self, tilemap: Tilemap, movement=(0, 0)):
+        if self.moving > 0:
+            self.moving = max(0, self.moving - 1)
+            if (
+                self.collisions["left"]
+                or self.collisions["right"]
+                or (
+                    self.velocity[1] == 0
+                    and not tilemap.solid_check(
+                        (
+                            self.rect().centerx + (-1 if self.flip else 1) * (self.size[0] // 2 + tilemap.tile_size // 2),
+                            self.rect().bottom + tilemap.tile_size // 2,
+                        )
+                    )
+                )
+            ):
+                self.flip = not self.flip
+            else:
+                movement = (movement[0] + (-self.speed if self.flip else self.speed), movement[1])
+        elif random.random() < 0.01:
+            self.moving = random.randint(120, 480)
+            self.set_action("run")
+        else:
+            self.set_action("idle")
+
+        super().update(tilemap, movement)
 
 
-class Pig(Enemy, PhysicsEntity):
-    def __init__(self) -> None:
-        super().__init__()
+class Pig(RunningEnemy):
+    def __init__(self, game, pos):
+        super().__init__(game, "pig", pos, size=(16, 16), animation_offset=(-8, -14), speed=1)
+
+    def update(self, tilemap: Tilemap, movement=(0, 0)):
+        dx = self.game.player.pos[0] - self.pos[0]
+        dy = self.game.player.pos[1] - self.pos[1]
+        tiles = 6
+        do_rush = False
+        if abs(dy) < self.size[1] and abs(dx) < tiles * self.size[0] and ((dx > 0 and not self.flip) or (dx < 0 and self.flip)):
+            do_rush = True
+            for i in range(tiles):
+                if tilemap.solid_check((self.pos[0] + i * (dx / tiles), self.pos[1])):
+                    do_rush = False
+
+        if do_rush:
+            self.moving += 1
+            self.speed = 2
+        else:
+            self.speed = 1
+        super().update(tilemap, movement)
+
+
+class Snail(RunningEnemy):
+    def __init__(self, game, pos):
+        super().__init__(game, "snail", pos, size=(16, 16), animation_offset=(-8, -8), speed=0.125)
+        self.moving = 1
+        self.set_action("run")
+        self.shooting = 0
+
+    def update(self, tilemap, movement=(0, 0)):
+        dx = self.game.player.pos[0] - self.pos[0]
+        dy = self.game.player.pos[1] - self.pos[1]
+
+        if self.shooting:
+            self.shooting = max(0, self.shooting - 1)
+            if self.shooting == 200:
+                if dx > 0 and not self.flip:
+                    self.game.projectiles.append(Projectile(self.game, "slime", (self.rect().centerx + 20, self.rect().centery), (2, 0), 480))
+                elif dx < 0 and self.flip:
+                    self.game.projectiles.append(Projectile(self.game, "slime", (self.rect().centerx - 8, self.rect().centery), (-2, 0), 480))
+            if self.shooting <= 0:
+                self.moving = 1
+                self.set_action("run")
+        else:
+            tiles = 12
+            do_shoot = False
+            if abs(dy) < self.size[1] and abs(dx) < tiles * self.size[0] and ((dx > 0 and not self.flip) or (dx < 0 and self.flip)):
+                do_shoot = True
+                for i in range(tiles):
+                    if tilemap.solid_check((self.pos[0] + i * (dx / tiles), self.pos[1])):
+                        do_shoot = False
+                if do_shoot:
+                    self.shooting = 240
+                    self.set_action("idle")
+                    self.moving = 0
+        super().update(tilemap, movement=movement)
+
+
+class Bee(PhysicsEntity):
+    def __init__(self, game, pos):
+        super().__init__(game, "bee", pos, size=(16, 16), animation_offset=(-8, -8))
+        self.set_action("idle")
+        self.attacking = 0
+        self.projectiles = []
+
+    def update(self, tilemap, movement=(0, 0)):
+        # keep bee in air
+        self.velocity[1] = 0
+
+        if self.attacking:
+            self.attacking = max(0, self.attacking - 1)
+            if self.attacking == 120 + 36:
+                self.game.projectiles.append(Projectile(self.game, "sting", (self.rect().centerx, self.rect().bottom), (0, 2), 360))
+            if self.attacking == 120 + 0:
+                self.set_action("idle")
+        else:
+            if random.random() < 0.01:
+                self.attacking = 120 + 64
+                self.set_action("attack")
+
+        super().update(tilemap, movement)
+
+
+class Chicken(RunningEnemy):
+    def __init__(self, game, pos):
+        super().__init__(game, "chicken", pos, size=(16, 16), animation_offset=(-8, -16), speed=4)
+
+
+class Bunny(RunningEnemy):
+    def __init__(self, game, pos):
+        super().__init__(game, "bunny", pos, size=(16, 16), animation_offset=(-8, -26), speed=1)
+
+    def update(self, tilemap, movement=(0, 0)):
+        super().update(tilemap, movement)
+
+        if (
+            self.moving
+            and self.collisions["down"]
+            and random.random() < 0.1
+            and tilemap.solid_check((self.rect().centerx + (-2.5 if self.flip else 2.5) * tilemap.tile_size, self.rect().bottom + tilemap.tile_size // 2))
+        ):
+            self.velocity[1] = -2
