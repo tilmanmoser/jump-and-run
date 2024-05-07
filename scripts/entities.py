@@ -190,9 +190,9 @@ class Player(PhysicsEntity):
                 self.set_action("idle")
 
         if self.velocity[0] > 0:
-            self.velocity[0] = max(0, self.velocity[0] - 0.1)
+            self.velocity[0] = max(0, self.velocity[0] - 0.2)
         else:
-            self.velocity[0] = min(0, self.velocity[0] + 0.1)
+            self.velocity[0] = min(0, self.velocity[0] + 0.2)
 
         super().update(tilemap, movement=(movement[0] * self.speed, movement[1]))
 
@@ -210,14 +210,14 @@ class Player(PhysicsEntity):
     def jump(self):
         if self.wall_slide:
             if self.flip and self.last_movement[0] < 0:
-                self.velocity[0] = 5
+                self.velocity[0] = 6
                 self.velocity[1] = -3
                 self.air_time = 5
                 self.jumps = 0
                 return True
 
             elif not self.flip and self.last_movement[0] > 0:
-                self.velocity[0] = -5
+                self.velocity[0] = -6
                 self.velocity[1] = -3
                 self.air_time = 5
                 self.jumps = 0
