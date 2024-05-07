@@ -266,9 +266,9 @@ class Game:
         self.stats_surface.blit(time, (self.stats_surface.get_width() - time.get_width(), 0))
 
         stats_mask = pygame.mask.from_surface(self.stats_surface)
-        stats_mask = stats_mask.convolve(pygame.Mask((5, 5), fill=True))
+        stats_mask = stats_mask.convolve(pygame.Mask((3, 3), fill=True))
         silhouette = stats_mask.to_surface(setcolor=(0, 0, 33), unsetcolor=(0, 0, 0, 0))
-        self.display.blit(silhouette, (6, 6))
+        self.display.blit(silhouette, (7, 7))
 
         self.display.blit(self.stats_surface, (8, 8))
 
