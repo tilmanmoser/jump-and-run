@@ -5,6 +5,22 @@ import pygame
 from scripts.assets import Animation
 
 
+class Dust:
+    def __init__(self, pos):
+        self.pos = list(pos)
+        self.ttl = random.randint(5, 15)
+        self.radius = int(random.random() * 6)
+        self.image = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, (192, 192, 192), (self.radius, self.radius), self.radius)
+
+    def update(self):
+        self.ttl -= 1
+        return not self.ttl
+
+    def render(self, surface: pygame.Surface, offset=(0, 0)):
+        surface.blit(self.image, (self.pos[0] - offset[0], self.pos[1] - offset[1] - self.radius))
+
+
 class Bubble:
     COLORS = [(250, 145, 137), (252, 174, 124), (255, 230, 153), (249, 255, 181), (179, 245, 188), (214, 246, 255), (226, 203, 247), (209, 189, 255)]
 

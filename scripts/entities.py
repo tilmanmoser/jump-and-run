@@ -1,7 +1,7 @@
 import math
 import random
 import pygame
-from scripts.particles import Bubble, Spark
+from scripts.particles import Bubble, Dust, Spark
 from scripts.projectile import Projectile
 from scripts.tilemap import Tilemap
 
@@ -353,6 +353,11 @@ class Bee(PhysicsEntity):
 class Chicken(RunningEnemy):
     def __init__(self, game, pos):
         super().__init__(game, "chicken", pos, size=(16, 16), animation_offset=(-8, -16), speed=4)
+
+    def update(self, tilemap, movement=(0, 0)):
+        super().update(tilemap, movement)
+        if self.moving:
+            self.game.particles.add(Dust((self.rect().right if self.flip else self.rect().left, self.rect().bottom)))
 
 
 class Bunny(RunningEnemy):
