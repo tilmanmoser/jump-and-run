@@ -56,6 +56,7 @@ class Game:
         self.fruits = {}
 
         # game states
+        self.rerender_background = True
         self.level = 0
         self.time = 300 * FPS
         self.transition = -30
@@ -69,6 +70,7 @@ class Game:
         self.load_level()
 
     def load_level(self):
+        self.rerender_background = True
         self.transition = -30
         self.time = 300 * FPS
         self.reached_level_end = False
@@ -281,7 +283,7 @@ class Game:
         self.display.blit(self.stats_surface, (8, 8))
 
     def render_background(self):
-        if self.bg_surface.get_width() != self.display.get_width():
+        if self.rerender_background or self.bg_surface.get_width() != self.display.get_width():
             self.bg_surface = pygame.Surface(self.display.get_size())
             pygame.gfxdraw.textured_polygon(
                 self.bg_surface,
