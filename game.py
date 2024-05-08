@@ -6,7 +6,17 @@ from scripts.clouds import Clouds
 from scripts.entities import Bee, Bunny, Chicken, Entity, Fruit, Pig, Player, Snail
 from scripts.particles import Leaf, Particles
 from scripts.tilemap import Tilemap
-from scripts.assets import LEAF_SPAWN_RECTS, get_level_list, load_animated_assets, load_image, load_images, load_projectile_assets, load_tile_assets
+from scripts.assets import (
+    LEAF_SPAWN_RECTS,
+    get_level_list,
+    load_animated_assets,
+    load_image,
+    load_images,
+    load_music,
+    load_projectile_assets,
+    load_sounds,
+    load_tile_assets,
+)
 
 INITIAL_DISPLAY_SIZE = [800, 500]
 FPS = 60
@@ -16,6 +26,7 @@ class Game:
     def __init__(self):
         # display
         pygame.init()
+        pygame.mouse.set_visible(False)
         pygame.display.set_caption("Jump 'n' Run")
         self.screen = pygame.display.set_mode(INITIAL_DISPLAY_SIZE, pygame.RESIZABLE)
         self.display = pygame.Surface(INITIAL_DISPLAY_SIZE)
@@ -41,7 +52,9 @@ class Game:
         self.projectile_assets = load_projectile_assets()
         self.mountains = load_image("mountains.png")
         self.clouds = Clouds(load_images("clouds"), count=16)
-
+        self.muted_icons = load_images("muted")
+        self.music = load_music()
+        self.sounds = load_sounds()
         self.levels = get_level_list()
         self.tilemap = Tilemap(self.tile_assets)
 
@@ -61,6 +74,7 @@ class Game:
         self.time = 300 * FPS
         self.transition = -30
         self.reached_level_end = False
+        self.muted = True
         self.load_level()
 
     def reset(self):
@@ -93,6 +107,14 @@ class Game:
                 )
             )
         self.player.spawn(self.start.pos)
+
+    def toggle_audio(self):
+        self.muted = not self.muted
+        if self.muted:
+            self.music.stop()
+        else:
+            self.music.set_volume(0.25)
+            self.music.play(-1)
 
     def spawn_fruits(self):
         self.fruits = {}
@@ -196,6 +218,8 @@ class Game:
                         self.movement[1] = True
                     if event.key in (pygame.K_UP, pygame.K_w, pygame.K_SPACE):
                         self.player.jump()
+                    if event.key == pygame.K_m:
+                        self.toggle_audio()
                 if event.type == pygame.KEYUP:
                     if event.key in (pygame.K_LEFT, pygame.K_a):
                         self.movement[0] = False
@@ -265,6 +289,8 @@ class Game:
         self.stats_surface.blit(self.font.render(str(self.player.fruits).zfill(2), False, (255, 255, 255)), (100, 0))
         # level
         self.stats_surface.blit(self.font.render(f"L{str(self.level).zfill(2)}", False, (255, 255, 255)), (176, 0))
+        # muted
+        self.stats_surface.blit(self.muted_icons[self.muted], (256, 0))
         # time
         time = self.font.render(str(self.time // FPS), False, (255, 255, 255))
         self.stats_surface.blit(time, (self.stats_surface.get_width() - time.get_width(), 0))

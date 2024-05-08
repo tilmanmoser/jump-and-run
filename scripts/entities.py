@@ -61,6 +61,8 @@ class Fruit(Entity):
             self.game.player.collect_fruit()
             for i in range(20):
                 self.game.particles.add(Bubble(pos=(int(self.pos[0] + self.size[0] / 2), int(self.pos[1] + self.size[1] / 2))))
+            if not self.game.muted:
+                self.game.sounds["fruit"].play()
             return True
 
 
@@ -160,12 +162,16 @@ class Player(PhysicsEntity):
         self.lives = max(0, self.lives - 1)
         self.died += 1
         self.animate_death()
+        if not self.game.muted:
+            self.game.sounds["death"].play()
 
     def collect_fruit(self):
         self.fruits += 1
         if self.fruits >= 100:
             self.fruits = self.fruits % 100
             self.lives += 1
+            if not self.game.muted:
+                self.game.sounds["1up"].play()
 
     def update(self, tilemap: Tilemap, movement=(0, 0)):
         self.air_time += 1
@@ -214,6 +220,8 @@ class Player(PhysicsEntity):
                 if p_rect.centery < e_rect.centery:
                     enemy.animate_death()
                     self.game.enemies.remove(enemy)
+                    if not self.game.muted:
+                        self.game.sounds["kill"].play()
                 else:
                     self.die()
 
@@ -224,6 +232,8 @@ class Player(PhysicsEntity):
                 self.velocity[1] = -3
                 self.air_time = 5
                 self.jumps = 0
+                if not self.game.muted:
+                    self.game.sounds["jump"].play()
                 return True
 
             elif not self.flip and self.last_movement[0] > 0:
@@ -232,12 +242,16 @@ class Player(PhysicsEntity):
                 self.air_time = 5
                 self.jumps = 0
                 self.flip = not self.flip
+                if not self.game.muted:
+                    self.game.sounds["jump"].play()
                 return True
 
         elif self.jumps:
             self.velocity[1] = -4
             self.jumps -= 1
             self.air_time = 5
+            if not self.game.muted:
+                self.game.sounds["jump"].play()
             return True
 
 

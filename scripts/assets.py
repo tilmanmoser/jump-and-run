@@ -2,6 +2,8 @@ import os
 import pygame
 
 BASE_IMG_PATH = "data/images/"
+BASE_SND_PATH = "data/sounds/"
+BASE_MSC_PATH = "data/music/"
 
 LEAF_SPAWN_RECTS = [
     pygame.Rect(15, 15, 44, 38),
@@ -103,6 +105,21 @@ def load_animated_assets():
 
 def load_projectile_assets():
     return {"slime": load_image("projectiles/slime.png"), "sting": load_image("projectiles/sting.png")}
+
+
+def load_music():
+    return pygame.mixer.Sound(BASE_MSC_PATH + "epic-battle-153400.mp3")
+
+
+def load_sounds():
+    return {
+        "1up": pygame.mixer.Sound(BASE_SND_PATH + "1up.wav"),
+        "death": pygame.mixer.Sound(BASE_SND_PATH + "death.wav"),
+        "fruit": pygame.mixer.Sound(BASE_SND_PATH + "fruit.wav"),
+        "jump": pygame.mixer.Sound(BASE_SND_PATH + "jump.wav"),
+        "kill": pygame.mixer.Sound(BASE_SND_PATH + "kill.wav"),
+        "shoot": pygame.mixer.Sound(BASE_SND_PATH + "shoot.wav"),
+    }
 
 
 def get_level_list():
