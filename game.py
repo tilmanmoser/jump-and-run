@@ -26,7 +26,7 @@ class Game:
         self.bg_surface = pygame.Surface((0, 0))
 
         # topbar (stats)
-        self.stats_surface = pygame.Surface((self.display.get_width() - 16, 16), pygame.SRCALPHA)
+        self.stats_surface = pygame.Surface((self.display.get_width() - 16, 80), pygame.SRCALPHA)
         self.stats_images = load_images("stats")
         self.font = pygame.Font("data/fonts/press-start-2p-latin-400-normal.ttf", 16)
 
@@ -56,7 +56,7 @@ class Game:
         self.fruits = {}
 
         # game states
-        self.level = 1
+        self.level = 0
         self.time = 300 * FPS
         self.transition = -30
         self.reached_level_end = False
@@ -149,7 +149,7 @@ class Game:
                     self.load_level()
             elif self.player.rect().colliderect(self.end.rect()):
                 self.reached_level_end = True
-            else:
+            elif self.level > 0:
                 self.time -= 1
                 if self.time <= 0:
                     self.player.die()
@@ -252,7 +252,7 @@ class Game:
 
     def render_stats(self):
         if self.stats_surface.get_width() != self.display.get_width() - 16:
-            self.stats_surface = pygame.Surface((self.display.get_width() - 16, 16), pygame.SRCALPHA)
+            self.stats_surface = pygame.Surface((self.display.get_width() - 16, 80), pygame.SRCALPHA)
 
         self.stats_surface.fill((0, 0, 0, 0))
         # lives
@@ -261,9 +261,17 @@ class Game:
         # fruits
         self.stats_surface.blit(self.stats_images[1], (80, 0))
         self.stats_surface.blit(self.font.render(str(self.player.fruits).zfill(2), False, (255, 255, 255)), (100, 0))
+        # level
+        self.stats_surface.blit(self.font.render(f"L{str(self.level).zfill(2)}", False, (255, 255, 255)), (176, 0))
         # time
         time = self.font.render(str(self.time // FPS), False, (255, 255, 255))
         self.stats_surface.blit(time, (self.stats_surface.get_width() - time.get_width(), 0))
+
+        if self.level == 0:
+            text_keys = self.font.render("Use arrow keys or [w,a,s,d] to move.", False, (255, 255, 255))
+            self.stats_surface.blit(text_keys, ((self.stats_surface.get_width() - text_keys.get_width()) // 2, 40))
+            text_start = self.font.render("Start game by touching the flag.", False, (255, 255, 255))
+            self.stats_surface.blit(text_start, ((self.stats_surface.get_width() - text_start.get_width()) // 2, 64))
 
         stats_mask = pygame.mask.from_surface(self.stats_surface)
         stats_mask = stats_mask.convolve(pygame.Mask((3, 3), fill=True))

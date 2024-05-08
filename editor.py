@@ -20,6 +20,7 @@ class Editor:
         self.display = pygame.Surface(INITIAL_DISPLAY_SIZE)
         self.display_scale = 1
         self.clock = pygame.Clock()
+        self.font = pygame.Font("data/fonts/press-start-2p-latin-400-normal.ttf", 16)
 
         # user inputs & derived states
         self.movement = [False, False, False, False]
@@ -29,6 +30,7 @@ class Editor:
         self.tile_type = 0
         self.tile_variant = 0
         self.scroll = [0, 0]
+        self.size = [0, 0]
 
         # assets and tilemap
         self.tile_assets = load_tile_assets()
@@ -36,8 +38,18 @@ class Editor:
         self.tilemap = Tilemap(self.tile_assets)
         try:
             self.tilemap.load(self.level_file)
+            self.calc_size()
         except FileNotFoundError:
             pass
+
+    def calc_size(self):
+        p0 = [0, 0]
+        p1 = [0, 0]
+        for tile_loc in self.tilemap.tiles:
+            tile = self.tilemap.tiles[tile_loc]
+            p0 = [min(p0[0], tile["pos"][0]), min(p0[1], tile["pos"][1])]
+            p1 = [max(p1[0], tile["pos"][0]), max(p1[1], tile["pos"][1])]
+        self.size = [p1[0] - p0[0], p1[1] - p0[1]]
 
     def run(self):
         running = True
@@ -54,14 +66,18 @@ class Editor:
             # tile placement
             if self.click[0] and self.ongrid:  # (offgrid in events loop once per click)
                 self.tilemap.add((mpos[0] + render_offset[0], mpos[1] + render_offset[1]), self.tile_list[self.tile_type], self.tile_variant, self.ongrid)
+                self.calc_size()
             if self.click[1]:
                 self.tilemap.remove((mpos[0] + render_offset[0], mpos[1] + render_offset[1]), render_offset, self.ongrid)
+                self.calc_size()
 
             # rendering
             self.display.fill((0, 0, 0, 0))
             self.render_background()
             self.tilemap.render(self.display, render_offset)
             self.render_current_tile(mpos)
+
+            self.display.blit(self.font.render(f"{self.size[0]}x{self.size[1]}", False, (255, 255, 255)), (8, 8))
 
             self.screen.fill((0, 0, 0, 0))
             self.screen.blit(
