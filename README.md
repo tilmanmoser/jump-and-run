@@ -23,12 +23,15 @@ Run level editor:  `pipenv run python editor.py data/levels/NN.json`
 
 `pipenv run pyinstaller --add-data data:data --onefile --windowed game.py --name JumpNRun`
 
-## License(s)
+## Licenses
 
-- Font: [press-start-2p](./data/fonts/press-start-2p-LICENSE.txt) (SIL OPEN FONT LICENSE Version 1.1)
-- Images, music, and sounds: CC0 / Public Domain
-- Source code: MIT License (see below)
+**Fonts:**
+"Press Start 2P": [SIL OPEN FONT LICENSE Version 1.1](./data/fonts/press-start-2p-LICENSE.txt) 
 
+**Images, music, and sounds:**
+CC0 / Public Domain
+
+**Source Code**
 Copyright 2024, Tilman Moser
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
