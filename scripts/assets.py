@@ -1,9 +1,19 @@
 import os
+import sys
 import pygame
 
-BASE_IMG_PATH = "data/images/"
-BASE_SND_PATH = "data/sounds/"
-BASE_MSC_PATH = "data/music/"
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+BASE_IMG_PATH = resource_path("./data/images/")
+BASE_SND_PATH = resource_path("./data/sounds/")
+BASE_MSC_PATH = resource_path("./data/music/")
 
 LEAF_SPAWN_RECTS = [
     pygame.Rect(15, 15, 44, 38),
@@ -124,7 +134,7 @@ def load_sounds():
 
 def get_level_list():
     levels = []
-    for file in sorted(os.listdir("data/levels")):
+    for file in sorted(os.listdir(resource_path("data/levels"))):
         if str(file).endswith((".json")):
-            levels.append("data/levels/" + file)
+            levels.append(resource_path("data/levels/" + file))
     return levels

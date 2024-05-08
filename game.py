@@ -16,6 +16,7 @@ from scripts.assets import (
     load_projectile_assets,
     load_sounds,
     load_tile_assets,
+    resource_path,
 )
 
 INITIAL_DISPLAY_SIZE = [800, 500]
@@ -39,7 +40,7 @@ class Game:
         # topbar (stats)
         self.stats_surface = pygame.Surface((self.display.get_width() - 16, 80), pygame.SRCALPHA)
         self.stats_images = load_images("stats")
-        self.font = pygame.Font("data/fonts/press-start-2p-latin-400-normal.ttf", 16)
+        self.font = pygame.Font(resource_path("data/fonts/press-start-2p-latin-400-normal.ttf"), 16)
 
         # user inputs & derived states
         self.movement = [False, False]

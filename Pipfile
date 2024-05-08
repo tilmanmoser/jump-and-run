@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pygame-ce = "*"
+pyinstaller = "*"
 
 [dev-packages]
 
